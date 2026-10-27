@@ -3,19 +3,16 @@
 Pierwszy etap niezależnego bota Discord dla jednej gildii SWGOH, z architekturą pozwalającą później rozdzielić dane wielu gildii.
 
 ## Stan
-- Import Comlink: sprawdzony w GitHub Actions na 48 członkach i 17 070 jednostkach rosterów.
+- Import Comlink: sprawdzony wcześniej w GitHub Actions na 48 członkach i 17 070 jednostkach rosterów.
 - Import odrzuca niekompletne dane.
 - Rosterów nie zapisujemy do logów, artefaktów ani repozytorium.
 - Schemat Cloudflare D1 przygotowany do trwałego przechowywania.
 - Interfejs Discord i właściwy optymalizator ROTE są kolejnymi etapami.
 
-## Ważne: utworzenie repozytorium
-Nie mogę utworzyć nowego repozytorium na koncie GitHub przez dostępne połączenie. Ten ZIP zawiera gotowy szkielet repozytorium. Utwórz puste repozytorium `vhontebh-arch/swgoh-guild-bot` na GitHubie, a następnie wgraj zawartość ZIP przez **Add file → Upload files**. Nie dodawaj plików z danymi rosterów.
-
 ## Uruchomienie importu w chmurze
-1. Po wgraniu plików otwórz **Actions** i włącz workflows, jeśli GitHub o to poprosi.
+1. Otwórz **Actions** i włącz workflows, jeśli GitHub o to poprosi.
 2. Wybierz **Import guild rosters (Comlink)** → **Run workflow**.
-3. Wpisz Ally Code dowolnego członka tej gildii (domyślnie pole jest puste).
+3. Wpisz Ally Code dowolnego członka docelowej gildii.
 4. Workflow uruchomi Comlink, pobierze listę członków i roster każdego gracza oraz sprawdzi kompletność.
 5. Log pokaże wyłącznie nazwę gildii, liczbę członków i łączną liczbę jednostek. Roster pozostaje na tymczasowym runnerze i jest usuwany po zakończeniu.
 
