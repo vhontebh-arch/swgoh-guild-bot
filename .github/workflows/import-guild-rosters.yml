@@ -24,8 +24,8 @@ jobs:
         run: |
           set -e
           docker pull ghcr.io/swgoh-utils/swgoh-comlink:latest
-          docker run --name swgoh-comlink -d -p 3000:3000 \\
-            -e APP_NAME=swgoh-guild-bot \\
+          docker run --name swgoh-comlink -d -p 3000:3000 \
+            -e APP_NAME=swgoh-guild-bot \
             ghcr.io/swgoh-utils/swgoh-comlink:latest
           for i in $(seq 1 45); do
             if curl -fsS "http://127.0.0.1:3000/" >/dev/null 2>&1; then
@@ -49,11 +49,11 @@ jobs:
           set -euo pipefail
           test -n "$D1_IMPORT_URL" || { echo "Missing D1_IMPORT_URL secret."; exit 1; }
           test -n "$D1_IMPORT_TOKEN" || { echo "Missing D1_IMPORT_TOKEN secret."; exit 1; }
-          curl --fail-with-body --silent --show-error \\
-            --max-time 240 \\
-            -H "Authorization: Bearer $D1_IMPORT_TOKEN" \\
-            -H "Content-Type: application/json" \\
-            --data-binary @/tmp/guild_rosters.json \\
+          curl --fail-with-body --silent --show-error \
+            --max-time 240 \
+            -H "Authorization: Bearer $D1_IMPORT_TOKEN" \
+            -H "Content-Type: application/json" \
+            --data-binary @/tmp/guild_rosters.json \
             "$D1_IMPORT_URL"
       - name: Remove local roster file
         if: always()
