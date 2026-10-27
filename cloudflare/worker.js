@@ -26,7 +26,7 @@ async function runBatches(db, list) {
     await db.batch(list.slice(i, i + BATCH_SIZE));
   }
 }
-function validate(data) {
+export function validate(data) {
   if (!data || data.schema_version !== 1 || data.import_complete !== true ||
       !data.guild || !validText(asText(data.guild.guild_id), 100) ||
       !validText(data.guild.name, 200) ||
