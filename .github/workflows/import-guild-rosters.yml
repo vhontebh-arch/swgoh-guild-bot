@@ -49,15 +49,18 @@ jobs:
           set -euo pipefail
           test -n "$D1_IMPORT_URL" || { echo "Missing D1_IMPORT_URL secret."; exit 1; }
           test -n "$D1_IMPORT_TOKEN" || { echo "Missing D1_IMPORT_TOKEN secret."; exit 1; }
+          gzip -c /tmp/guild_rosters.json > /tmp/guild_rosters.json.gz
+          echo "Compressed roster payload: $(du -h /tmp/guild_rosters.json.gz | cut -f1)"
           curl --fail-with-body --silent --show-error \
             --max-time 240 \
             -H "Authorization: Bearer $D1_IMPORT_TOKEN" \
             -H "Content-Type: application/json" \
-            --data-binary @/tmp/guild_rosters.json \
+            -H "Content-Encoding: gzip" \
+            --data-binary @/tmp/guild_rosters.json.gz \
             "$D1_IMPORT_URL"
       - name: Remove local roster file
         if: always()
-        run: rm -f /tmp/guild_rosters.json
+        run: rm -f /tmp/guild_rosters.json /tmp/guild_rosters.json.gz
       - name: Stop Comlink
         if: always()
         run: docker rm -f swgoh-comlink 2>/dev/null || true
