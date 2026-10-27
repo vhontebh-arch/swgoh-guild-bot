@@ -84,20 +84,29 @@ export default {
     let data;
     try {
       // GitHub Actions sends gzip-compressed JSON to stay below Cloudflare's
-      // request-body limit. Decompress inside the Worker before parsing.
+      // request-body limit. Some proxy paths may transparently decompress a
+      // request while retaining its Content-Encoding header, so inspect the
+      // body signature before attempting gzip decompression.
       const encoding = (request.headers.get("content-encoding") || "identity").toLowerCase();
       if (encoding !== "identity" && encoding !== "gzip") {
         return json({ error: "Unsupported content encoding." }, 415);
       }
-      const body = encoding === "gzip"
-        ? request.body.pipeThrough(new DecompressionStream("gzip"))
-        : request.body;
-      const raw = await new Response(body).text();
+      const bytes = new Uint8Array(await request.arrayBuffer());
+      const isGzip = bytes.length >= 2 && bytes[0] === 0x1f && bytes[1] === 0x8b;
+      let raw;
+      if (encoding === "gzip" && isGzip) {
+        const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream("gzip"));
+        raw = await new Response(stream).text();
+      } else {
+        // Accept identity JSON if an intermediary already decompressed it.
+        raw = new TextDecoder("utf-8", { fatal: true }).decode(bytes);
+      }
       if (new TextEncoder().encode(raw).byteLength > MAX_BODY_BYTES) {
         return json({ error: "Payload too large." }, 413);
       }
       data = JSON.parse(raw);
     } catch (error) {
+      // Deliberately omit body contents and parser details to keep roster data private.
       return json({ error: "Invalid or oversized JSON payload." }, 400);
     }
 
