@@ -11,7 +11,7 @@ Ten etap zapisuje roster do prywatnej bazy D1 przez uwierzytelnionego Workera. N
 W pliku `cloudflare/wrangler.toml` zastąp `REPLACE_WITH_CLOUDFLARE_D1_DATABASE_ID` identyfikatorem z poprzedniego kroku. Pozostaw nazwę bindingu `DB` bez zmian.
 
 ## 3. Utwórz tabele
-W panelu D1 otwórz **Console** i wykonaj zawartość pliku `storage/schema.sql` w całości. To tworzy tabele dla wersjonowanych importów. Nie wykonuj starego `storage/staging-schema.sql`; ten schemat został zastąpiony przez wersjonowany model.
+W panelu D1 otwórz **Console** i wykonaj zawartość pliku `storage/schema.sql` w całości. To tworzy tabele dla wersjonowanych importów. Nie używaj starszych kopii schematu stagingowego z historii repozytorium; obowiązuje wyłącznie aktualny `storage/schema.sql`.
 
 ## 4. Wdróż Worker
 Najprostsza ścieżka to Cloudflare Dashboard → **Workers & Pages** → **Create** → **Worker**, następnie edytuj kod, używając pliku `cloudflare/worker.js`. Ustaw binding D1:
