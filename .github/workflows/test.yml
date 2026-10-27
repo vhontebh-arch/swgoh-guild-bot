@@ -21,6 +21,6 @@ jobs:
       - name: Run importer tests
         run: python -m pytest -q
       - name: Check Worker JavaScript syntax
-        run: node --check cloudflare/worker.js
+        run: node --input-type=module --check < cloudflare/worker.js
       - name: Validate D1 schema with SQLite
         run: python -c "import sqlite3; c=sqlite3.connect(':memory:'); c.executescript(open('storage/schema.sql', encoding='utf-8').read()); print('D1 schema SQL parsed successfully')"
