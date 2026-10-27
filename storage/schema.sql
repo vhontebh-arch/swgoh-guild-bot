@@ -20,8 +20,7 @@ CREATE TABLE IF NOT EXISTS roster_imports (
   expected_units INTEGER NOT NULL,
   imported_at TEXT NOT NULL,
   completed_at TEXT,
-  status TEXT NOT NULL CHECK (status IN ('staging', 'active', 'failed')),
-  FOREIGN KEY (guild_id) REFERENCES guilds(guild_id)
+  status TEXT NOT NULL CHECK (status IN ('staging', 'active', 'failed'))
 );
 
 CREATE TABLE IF NOT EXISTS active_guild_imports (
