@@ -103,7 +103,10 @@ def fetch_guild_rosters(ally_code: str, comlink_url: str, workers: int = 6) -> d
     failures = []
     seed_player_id = seed.get("playerId")
     if seed_player_id in player_ids:
-        players.append(normalize_player(seed, str(seed_player_id)))
+        seed_profile = normalize_player(seed, str(seed_player_id))
+        if str(seed_profile.get("guild_id")) != str(guild_id):
+            raise RuntimeError("Seed profile guild ID does not match selected guild; no output written.")
+        players.append(seed_profile)
     remaining = [pid for pid in player_ids if pid != seed_player_id]
 
     def fetch_member(player_id: str) -> dict:
@@ -115,9 +118,12 @@ def fetch_guild_rosters(ally_code: str, comlink_url: str, workers: int = 6) -> d
             pid = futures[future]
             try:
                 player = future.result()
-                if not player.get("rosterUnit"):
-                    raise RuntimeError("profile response has no rosterUnit")
-                players.append(normalize_player(player, pid))
+                if str(player.get("playerId") or pid) != pid:
+                    raise RuntimeError("profile response player ID does not match requested member")
+                normalized = normalize_player(player, pid)
+                if str(normalized.get("guild_id")) != str(guild_id):
+                    raise RuntimeError("profile response guild ID does not match selected guild")
+                players.append(normalized)
                 # Do not print player names or IDs in workflow logs.
                 print(f"Fetched roster {len(players)}/{len(player_ids)}")
             except Exception as exc:
