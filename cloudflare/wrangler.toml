@@ -1,5 +1,5 @@
 name = "swgoh-guild-roster-import"
-main = "cloudflare/worker.js"
+main = "worker.js"
 compatibility_date = "2026-10-01"
 
 [[d1_databases]]
