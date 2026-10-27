@@ -83,11 +83,22 @@ export default {
 
     let data;
     try {
-      const raw = await request.text();
-      if (raw.length > MAX_BODY_BYTES) return json({ error: "Payload too large." }, 413);
+      // GitHub Actions sends gzip-compressed JSON to stay below Cloudflare's
+      // request-body limit. Decompress inside the Worker before parsing.
+      const encoding = (request.headers.get("content-encoding") || "identity").toLowerCase();
+      if (encoding !== "identity" && encoding !== "gzip") {
+        return json({ error: "Unsupported content encoding." }, 415);
+      }
+      const body = encoding === "gzip"
+        ? request.body.pipeThrough(new DecompressionStream("gzip"))
+        : request.body;
+      const raw = await new Response(body).text();
+      if (new TextEncoder().encode(raw).byteLength > MAX_BODY_BYTES) {
+        return json({ error: "Payload too large." }, 413);
+      }
       data = JSON.parse(raw);
-    } catch {
-      return json({ error: "Invalid JSON payload." }, 400);
+    } catch (error) {
+      return json({ error: "Invalid or oversized JSON payload." }, 400);
     }
 
     let summary;
