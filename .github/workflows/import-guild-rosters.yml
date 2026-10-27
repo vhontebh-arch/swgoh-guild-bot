@@ -14,7 +14,7 @@ permissions:
 jobs:
   import:
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -41,6 +41,23 @@ jobs:
           ROTE_ALLY_CODE: ${{ inputs.ally_code }}
           COMLINK_URL: http://127.0.0.1:3000
         run: python src/import_guild_rosters.py --output /tmp/guild_rosters.json
+      - name: Send validated roster to private database
+        env:
+          D1_IMPORT_URL: ${{ secrets.D1_IMPORT_URL }}
+          D1_IMPORT_TOKEN: ${{ secrets.D1_IMPORT_TOKEN }}
+        run: |
+          set -euo pipefail
+          test -n "$D1_IMPORT_URL" || { echo "Missing D1_IMPORT_URL secret."; exit 1; }
+          test -n "$D1_IMPORT_TOKEN" || { echo "Missing D1_IMPORT_TOKEN secret."; exit 1; }
+          curl --fail-with-body --silent --show-error \
+            --max-time 240 \
+            -H "Authorization: Bearer $D1_IMPORT_TOKEN" \
+            -H "Content-Type: application/json" \
+            --data-binary @/tmp/guild_rosters.json \
+            "$D1_IMPORT_URL"
+      - name: Remove local roster file
+        if: always()
+        run: rm -f /tmp/guild_rosters.json
       - name: Stop Comlink
         if: always()
         run: docker rm -f swgoh-comlink 2>/dev/null || true

@@ -1,0 +1,28 @@
+name: Validate project
+
+on:
+  push:
+    branches: ["main", "feat/**"]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install test dependency
+        run: python -m pip install -r requirements-dev.txt
+      - name: Run importer tests
+        run: python -m pytest -q
+      - name: Run Worker validation tests
+        run: node --test tests/test_worker.mjs
+      - name: Check Worker JavaScript syntax
+        run: node --input-type=module --check < cloudflare/worker.js
+      - name: Validate D1 schema with SQLite
+        run: python -c "import sqlite3; c=sqlite3.connect(':memory:'); c.executescript(open('storage/schema.sql', encoding='utf-8').read()); print('D1 schema SQL parsed successfully')"

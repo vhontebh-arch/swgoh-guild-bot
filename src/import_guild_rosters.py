@@ -38,13 +38,22 @@ def post_json(base_url: str, endpoint: str, payload: dict, retries: int = 3) -> 
 
 def normalize_player(player: dict, expected_player_id: str | None = None) -> dict:
     player_id = player.get("playerId") or expected_player_id
-    roster = player.get("rosterUnit") or []
+    roster = player.get("rosterUnit")
+    if not isinstance(roster, list) or not roster:
+        raise RuntimeError("Profile response has no usable rosterUnit list.")
     units = []
+    seen_unit_ids = set()
     for unit in roster:
         if not isinstance(unit, dict):
-            continue
+            raise RuntimeError("Profile roster contains a malformed unit.")
+        unit_id = unit.get("definitionId") or unit.get("unitId")
+        if not isinstance(unit_id, str) or not unit_id:
+            raise RuntimeError("Profile roster contains a unit without an ID.")
+        if unit_id in seen_unit_ids:
+            raise RuntimeError("Profile roster contains duplicate unit IDs.")
+        seen_unit_ids.add(unit_id)
         units.append({
-            "unit_id": unit.get("definitionId") or unit.get("unitId"),
+            "unit_id": unit_id,
             "definition_id": unit.get("definitionId"),
             "current_rarity": unit.get("currentRarity"),
             "current_level": unit.get("currentLevel"),
@@ -94,7 +103,10 @@ def fetch_guild_rosters(ally_code: str, comlink_url: str, workers: int = 6) -> d
     failures = []
     seed_player_id = seed.get("playerId")
     if seed_player_id in player_ids:
-        players.append(normalize_player(seed, str(seed_player_id)))
+        seed_profile = normalize_player(seed, str(seed_player_id))
+        if str(seed_profile.get("guild_id")) != str(guild_id):
+            raise RuntimeError("Seed profile guild ID does not match selected guild; no output written.")
+        players.append(seed_profile)
     remaining = [pid for pid in player_ids if pid != seed_player_id]
 
     def fetch_member(player_id: str) -> dict:
@@ -106,9 +118,12 @@ def fetch_guild_rosters(ally_code: str, comlink_url: str, workers: int = 6) -> d
             pid = futures[future]
             try:
                 player = future.result()
-                if not player.get("rosterUnit"):
-                    raise RuntimeError("profile response has no rosterUnit")
-                players.append(normalize_player(player, pid))
+                if str(player.get("playerId") or pid) != pid:
+                    raise RuntimeError("profile response player ID does not match requested member")
+                normalized = normalize_player(player, pid)
+                if str(normalized.get("guild_id")) != str(guild_id):
+                    raise RuntimeError("profile response guild ID does not match selected guild")
+                players.append(normalized)
                 # Do not print player names or IDs in workflow logs.
                 print(f"Fetched roster {len(players)}/{len(player_ids)}")
             except Exception as exc:

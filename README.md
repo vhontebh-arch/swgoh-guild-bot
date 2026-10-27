@@ -6,7 +6,8 @@ Pierwszy etap niezależnego bota Discord dla jednej gildii SWGOH, z architektur�
 - Import Comlink: sprawdzony wcześniej w GitHub Actions na 48 członkach i 17 070 jednostkach rosterów.
 - Import odrzuca niekompletne dane.
 - Rosterów nie zapisujemy do logów, artefaktów ani repozytorium.
-- Schemat Cloudflare D1 przygotowany do trwałego przechowywania.
+- Worker Cloudflare przyjmuje wyłącznie uwierzytelnione importy i zapisuje roster jako wersjonowany snapshot w D1.
+- Wskaźnik aktywnego snapshotu zmienia się dopiero po walidacji i sprawdzeniu liczby zapisanych rekordów.
 - Interfejs Discord i właściwy optymalizator ROTE są kolejnymi etapami.
 
 ## Uruchomienie importu w chmurze
@@ -17,7 +18,7 @@ Pierwszy etap niezależnego bota Discord dla jednej gildii SWGOH, z architektur�
 5. Log pokaże wyłącznie nazwę gildii, liczbę członków i łączną liczbę jednostek. Roster pozostaje na tymczasowym runnerze i jest usuwany po zakończeniu.
 
 ## Bezpieczeństwo i trwałość danych
-Nie należy zapisywać pełnych rosterów w publicznym repozytorium ani publikować ich jako artefaktów GitHub Actions. Schemat `storage/schema.sql` tworzy tabele rozdzielone identyfikatorem gildii. W kolejnym kroku należy skonfigurować Cloudflare D1 i dodać uwierzytelniony zapis importer → D1; celowo nie ma jeszcze tokenów ani danych dostępowych w repozytorium.
+Nie zapisujemy pełnych rosterów w publicznym repozytorium ani nie publikujemy ich jako artefaktów GitHub Actions. Import trafia do D1 przez Worker wymagający tokena. Każdy import jest osobnym snapshotem; dopiero po sprawdzeniu kompletności Worker przełącza aktywny snapshot. Konfiguracja krok po kroku znajduje się w `docs/cloudflare-setup.md`.
 
 ## Układ
 - `src/import_guild_rosters.py` — importer Comlink z walidacją.

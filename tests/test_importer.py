@@ -1,3 +1,5 @@
+import pytest
+
 from src.import_guild_rosters import normalize_player
 
 
@@ -26,3 +28,20 @@ def test_normalize_player_does_not_invent_relic():
         "rosterUnit": [{"definitionId": "UNIT_A", "currentTier": 13}],
     })
     assert result["units"][0]["relic_tier"] is None
+
+
+def test_normalize_player_rejects_empty_roster():
+    with pytest.raises(RuntimeError, match="rosterUnit"):
+        normalize_player({"playerId": "p3", "rosterUnit": []})
+
+
+def test_normalize_player_rejects_unit_without_id():
+    with pytest.raises(RuntimeError, match="without an ID"):
+        normalize_player({"playerId": "p4", "rosterUnit": [{"currentTier": 5}]})
+
+
+def test_normalize_player_rejects_duplicate_units():
+    with pytest.raises(RuntimeError, match="duplicate unit IDs"):
+        normalize_player({"playerId": "p5", "rosterUnit": [
+            {"definitionId": "UNIT_A"}, {"definitionId": "UNIT_A"}
+        ]})
