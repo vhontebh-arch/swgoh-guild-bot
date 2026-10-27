@@ -38,13 +38,22 @@ def post_json(base_url: str, endpoint: str, payload: dict, retries: int = 3) -> 
 
 def normalize_player(player: dict, expected_player_id: str | None = None) -> dict:
     player_id = player.get("playerId") or expected_player_id
-    roster = player.get("rosterUnit") or []
+    roster = player.get("rosterUnit")
+    if not isinstance(roster, list) or not roster:
+        raise RuntimeError("Profile response has no usable rosterUnit list.")
     units = []
+    seen_unit_ids = set()
     for unit in roster:
         if not isinstance(unit, dict):
-            continue
+            raise RuntimeError("Profile roster contains a malformed unit.")
+        unit_id = unit.get("definitionId") or unit.get("unitId")
+        if not isinstance(unit_id, str) or not unit_id:
+            raise RuntimeError("Profile roster contains a unit without an ID.")
+        if unit_id in seen_unit_ids:
+            raise RuntimeError("Profile roster contains duplicate unit IDs.")
+        seen_unit_ids.add(unit_id)
         units.append({
-            "unit_id": unit.get("definitionId") or unit.get("unitId"),
+            "unit_id": unit_id,
             "definition_id": unit.get("definitionId"),
             "current_rarity": unit.get("currentRarity"),
             "current_level": unit.get("currentLevel"),
