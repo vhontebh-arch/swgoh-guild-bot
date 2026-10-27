@@ -1,0 +1,46 @@
+name: Import guild rosters (Comlink)
+
+on:
+  workflow_dispatch:
+    inputs:
+      ally_code:
+        description: "Ally Code of any member of the target guild"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Start Comlink
+        run: |
+          set -e
+          docker pull ghcr.io/swgoh-utils/swgoh-comlink:latest
+          docker run --name swgoh-comlink -d -p 3000:3000 \
+            -e APP_NAME=swgoh-guild-bot \
+            ghcr.io/swgoh-utils/swgoh-comlink:latest
+          for i in $(seq 1 45); do
+            if curl -fsS "http://127.0.0.1:3000/" >/dev/null 2>&1; then
+              echo "Comlink is ready."
+              exit 0
+            fi
+            sleep 2
+          done
+          docker logs swgoh-comlink
+          exit 1
+      - name: Import and validate all guild member rosters
+        env:
+          ROTE_ALLY_CODE: ${{ inputs.ally_code }}
+          COMLINK_URL: http://127.0.0.1:3000
+        run: python src/import_guild_rosters.py --output /tmp/guild_rosters.json
+      - name: Stop Comlink
+        if: always()
+        run: docker rm -f swgoh-comlink 2>/dev/null || true
